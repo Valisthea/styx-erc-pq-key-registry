@@ -22,16 +22,24 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
     using ECDSA for bytes32;
 
-    // ─── Immutables ───────────────────────────────────────────────────────────
+    // ─── Domain separator (fork-safe, recomputed on chain-id change) ─────────
 
-    bytes32 private immutable _DOMAIN_SEPARATOR;
+    bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
+    uint256 private immutable _CACHED_CHAIN_ID;
 
     // ─── Constructor ──────────────────────────────────────────────────────────
 
     constructor(uint256 maxKeysPerOwner_, uint256 minNistLevel_)
         StyxPQKeyRegistry(maxKeysPerOwner_, minNistLevel_)
     {
-        _DOMAIN_SEPARATOR = keccak256(abi.encode(
+        _CACHED_CHAIN_ID = block.chainid;
+        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator();
+    }
+
+    // ─── Internal helpers ─────────────────────────────────────────────────────
+
+    function _buildDomainSeparator() internal view returns (bytes32) {
+        return keccak256(abi.encode(
             keccak256(
                 "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
             ),
@@ -40,6 +48,15 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
             block.chainid,
             address(this)
         ));
+    }
+
+    /// @dev Returns the cached separator when chainId is unchanged, otherwise
+    ///      recomputes it live — prevents cross-chain signature replay after a fork.
+    function _domainSeparator() internal view returns (bytes32) {
+        if (block.chainid == _CACHED_CHAIN_ID) {
+            return _CACHED_DOMAIN_SEPARATOR;
+        }
+        return _buildDomainSeparator();
     }
 
     // ─── Dual-Sign Functions ──────────────────────────────────────────────────
@@ -56,7 +73,7 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
         bytes32 digest = keccak256(abi.encodePacked(
             bytes1(0x19),
             bytes1(0x01),
-            _DOMAIN_SEPARATOR,
+            _domainSeparator(),
             keccak256(message)
         ));
 
@@ -72,18 +89,22 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
         if (key.state == KeyState.REVOKED) return false;
         if (key.expiresAt != 0 && block.timestamp >= key.expiresAt) return false;
 
-        // 3. PQ signature structural check
-        //    Full ML-DSA/SLH-DSA verification is not available as an EVM precompile.
-        //    We validate that a non-empty proof was provided. Off-chain verification
-        //    should be performed by callers before trusting the result.
-        if (pqSig.length == 0) return false;
+        // 3. PQ signature size validation per FIPS 204/205 algorithm spec.
+        //    Full ML-DSA/SLH-DSA on-chain verification is not yet feasible without
+        //    EVM precompiles (~1.5M gas for ML-DSA-65; ~10M+ for SLH-DSA-256f).
+        //    We validate the minimum byte length per algorithm to reject trivially
+        //    invalid submissions. Off-chain verification SHOULD be performed by
+        //    callers before relying on the dual-sign result for high-value ops.
+        uint256 expSigSize = PQAlgorithms.expectedSignatureSize(key.algorithm);
+        if (expSigSize == 0) return false; // KEM key cannot produce signatures
+        if (pqSig.length < expSigSize) return false;
 
         return true;
     }
 
     /// @inheritdoc IERCWWWW_DualSign
     function domainSeparator() external view returns (bytes32) {
-        return _DOMAIN_SEPARATOR;
+        return _domainSeparator();
     }
 
     /// @inheritdoc IERCWWWW_DualSign

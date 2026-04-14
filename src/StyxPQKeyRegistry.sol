@@ -43,8 +43,14 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
     /// @dev newKeyId → oldKeyId  (backward pointer, enables rotationChain from any key)
     mapping(bytes32 => bytes32) internal _rotationSource;
 
+    /// @dev keyId → keccak256(proofOfPossession) for keys registered with proof
+    mapping(bytes32 => bytes32) internal _proofHashes;
+
     uint256 internal _maxKeysPerOwner;
     uint256 internal _minNistLevel;
+
+    /// @dev Hard cap on rotation chain traversal to prevent unbounded gas consumption.
+    uint256 internal constant MAX_CHAIN_LENGTH = 100;
 
     // ─── Constructor ──────────────────────────────────────────────────────────
 
@@ -72,12 +78,13 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
 
     /// @inheritdoc IERCWWWW
     /// @dev Proof of possession validation is structural at this layer:
-    ///      the proof must be non-empty. Full cryptographic verification of
-    ///      PQ self-signatures (e.g., ML-DSA signing a canonical registration
-    ///      message) requires a PQ precompile or external verifier contract,
-    ///      neither of which is yet standardised in the EVM. Protocol
-    ///      implementations SHOULD verify the proof off-chain via a dedicated
-    ///      PQ verifier before trusting a registered key.
+    ///      the proof must be non-empty and meet the minimum size for the
+    ///      algorithm (self-signature size for ML-DSA/SLH-DSA; 32-byte shared
+    ///      secret for ML-KEM). Full cryptographic verification requires a PQ
+    ///      precompile or external verifier contract, neither of which is yet
+    ///      standardised in the EVM. Protocol implementations SHOULD verify
+    ///      the proof off-chain via a dedicated PQ verifier before trusting
+    ///      a registered key. The proof hash is stored on-chain for auditability.
     function registerPQKeyWithProof(
         address owner,
         bytes4 algorithm,
@@ -86,11 +93,21 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         uint256 validityPeriod,
         bytes calldata proofOfPossession
     ) external nonReentrant returns (bytes32 keyId) {
-        if (proofOfPossession.length == 0) {
-            // keyId not yet computed at this validation stage
+        // Structural proof validation: enforce minimum size per algorithm.
+        // expectedProofSize returns 0 for unknown algorithms — those will be
+        // rejected later by _registerKey. We skip size check for unknown algos.
+        uint256 minProofSize = PQAlgorithms.expectedProofSize(algorithm);
+        if (minProofSize > 0 && proofOfPossession.length < minProofSize) {
             revert InvalidProofOfPossession(bytes32(0));
         }
-        return _registerKey(owner, algorithm, purpose, publicKey, validityPeriod);
+        if (proofOfPossession.length == 0) {
+            revert InvalidProofOfPossession(bytes32(0));
+        }
+
+        keyId = _registerKey(owner, algorithm, purpose, publicKey, validityPeriod);
+
+        // Store proof hash for on-chain auditability
+        _proofHashes[keyId] = keccak256(proofOfPossession);
     }
 
     function _registerKey(
@@ -304,20 +321,23 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
     /// @dev Walks backward via _rotationSource to find the chain root, then
     ///      forward via _rotationTarget to build the ordered chain.
     ///      Returns [root, ..., latest] regardless of which key in the chain
-    ///      was passed as input.
+    ///      was passed as input. Capped at MAX_CHAIN_LENGTH to prevent
+    ///      unbounded gas consumption from adversarial chain lengths.
     function rotationChain(bytes32 keyId) external view returns (bytes32[] memory) {
         if (_keys[keyId].registeredAt == 0) revert KeyNotFound(keyId);
 
-        // Find root by walking backward
+        // Find root by walking backward (capped to prevent infinite loops)
         bytes32 root = keyId;
-        while (_rotationSource[root] != bytes32(0)) {
+        uint256 steps = 0;
+        while (_rotationSource[root] != bytes32(0) && steps < MAX_CHAIN_LENGTH) {
             root = _rotationSource[root];
+            steps++;
         }
 
         // Count chain length by walking forward from root
         uint256 length = 0;
         bytes32 cur = root;
-        while (cur != bytes32(0)) {
+        while (cur != bytes32(0) && length < MAX_CHAIN_LENGTH) {
             length++;
             cur = _rotationTarget[cur];
         }
@@ -339,6 +359,12 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         if (key.state != KeyState.ACTIVE) return false;
         if (key.expiresAt != 0 && block.timestamp >= key.expiresAt) return false;
         return true;
+    }
+
+    /// @inheritdoc IERCWWWW
+    function proofHash(bytes32 keyId) external view returns (bytes32) {
+        if (_keys[keyId].registeredAt == 0) revert KeyNotFound(keyId);
+        return _proofHashes[keyId];
     }
 
     // ─── Configuration ────────────────────────────────────────────────────────
@@ -368,11 +394,13 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
 
     /// @notice Update the maximum number of keys per owner address.
     function setMaxKeysPerOwner(uint256 max) external onlyRole(REGISTRY_ADMIN_ROLE) {
+        emit MaxKeysPerOwnerUpdated(_maxKeysPerOwner, max);
         _maxKeysPerOwner = max;
     }
 
     /// @notice Update the minimum NIST security level for key registration.
     function setMinNistLevel(uint256 level) external onlyRole(REGISTRY_ADMIN_ROLE) {
+        emit MinNistLevelUpdated(_minNistLevel, level);
         _minNistLevel = level;
     }
 

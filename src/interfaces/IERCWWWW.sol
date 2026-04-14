@@ -117,6 +117,12 @@ interface IERCWWWW {
         RevocationReason indexed reason
     );
 
+    /// @notice Emitted when the per-owner key cap is updated by an admin.
+    event MaxKeysPerOwnerUpdated(uint256 oldMax, uint256 newMax);
+
+    /// @notice Emitted when the minimum NIST level requirement is updated by an admin.
+    event MinNistLevelUpdated(uint256 oldLevel, uint256 newLevel);
+
     // ─── Key Registration ────────────────────────────────────────────────────
 
     /// @notice Register a new post-quantum public key.
@@ -315,4 +321,10 @@ interface IERCWWWW {
 
     /// @notice Returns the expected public key byte length for a given algorithm.
     function expectedKeySize(bytes4 algorithm) external view returns (uint256);
+
+    /// @notice Returns the keccak256 hash of the proof-of-possession that was
+    ///         submitted when the key was registered via registerPQKeyWithProof().
+    /// @dev    Returns bytes32(0) for keys registered via registerPQKey() (no proof).
+    ///         Reverts with KeyNotFound if the key does not exist.
+    function proofHash(bytes32 keyId) external view returns (bytes32);
 }

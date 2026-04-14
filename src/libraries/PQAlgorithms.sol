@@ -67,6 +67,31 @@ library PQAlgorithms {
             || algorithm == SLH_DSA_256;
     }
 
+    /// @notice Returns the expected signature byte length for a given algorithm.
+    ///         Uses the minimum size (s-variant) for SLH-DSA to accept both s and f
+    ///         parameter-set signatures. Returns 0 for KEM algorithms (no signing).
+    ///
+    ///         Sources: FIPS 204 Table 1 (ML-DSA), FIPS 205 Table 2 (SLH-DSA).
+    function expectedSignatureSize(bytes4 algorithm) internal pure returns (uint256) {
+        if (algorithm == ML_DSA_44)   return 2420;
+        if (algorithm == ML_DSA_65)   return 3309;
+        if (algorithm == ML_DSA_87)   return 4627;
+        if (algorithm == SLH_DSA_128) return 7856;   // SHA2-128s minimum
+        if (algorithm == SLH_DSA_192) return 16224;  // SHA2-192s minimum
+        if (algorithm == SLH_DSA_256) return 29792;  // SHA2-256s minimum
+        return 0; // KEM algorithms have no signing capability
+    }
+
+    /// @notice Returns the minimum expected proof-of-possession byte length.
+    ///         For signature algorithms, this equals expectedSignatureSize().
+    ///         For ML-KEM, the proof is the decapsulated shared secret (32 bytes).
+    function expectedProofSize(bytes4 algorithm) internal pure returns (uint256) {
+        if (algorithm == ML_KEM_512 || algorithm == ML_KEM_768 || algorithm == ML_KEM_1024) {
+            return 32; // ML-KEM shared secret is always 32 bytes (all parameter sets)
+        }
+        return expectedSignatureSize(algorithm);
+    }
+
     /// @notice Returns true if the algorithm is known and supported.
     function isSupported(bytes4 algorithm) internal pure returns (bool) {
         return expectedKeySize(algorithm) > 0;

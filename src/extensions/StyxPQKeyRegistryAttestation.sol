@@ -2,7 +2,11 @@
 pragma solidity ^0.8.24;
 
 import {StyxPQKeyRegistry} from "../StyxPQKeyRegistry.sol";
-import {IERCWWWW_Attestation} from "../interfaces/IERCWWWW_Attestation.sol";
+import {
+    IERCWWWW_Attestation,
+    MAX_ATTESTATIONS_PER_KEY,
+    MAX_ATTESTATION_DATA_SIZE
+} from "../interfaces/IERCWWWW_Attestation.sol";
 
 /// @title  StyxPQKeyRegistryAttestation
 /// @author Valisthea (@Valisthea)
@@ -33,6 +37,12 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
         bytes calldata data
     ) external {
         if (_keys[keyId].registeredAt == 0) revert KeyNotFound(keyId);
+        if (_attestations[keyId].length >= MAX_ATTESTATIONS_PER_KEY) {
+            revert AttestationLimitReached(keyId, MAX_ATTESTATIONS_PER_KEY);
+        }
+        if (data.length > MAX_ATTESTATION_DATA_SIZE) {
+            revert AttestationDataTooLarge(data.length, MAX_ATTESTATION_DATA_SIZE);
+        }
 
         _attestations[keyId].push(Attestation({
             keyId:           keyId,
@@ -53,6 +63,27 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
         returns (Attestation[] memory)
     {
         return _attestations[keyId];
+    }
+
+    /// @inheritdoc IERCWWWW_Attestation
+    function attestationsOfPaginated(
+        bytes32 keyId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (Attestation[] memory attestations, uint256 total) {
+        Attestation[] storage all = _attestations[keyId];
+        total = all.length;
+
+        if (offset >= total || limit == 0) {
+            return (new Attestation[](0), total);
+        }
+
+        uint256 end = offset + limit > total ? total : offset + limit;
+        uint256 length = end - offset;
+        attestations = new Attestation[](length);
+        for (uint256 i = 0; i < length; i++) {
+            attestations[i] = all[offset + i];
+        }
     }
 
     /// @inheritdoc IERCWWWW_Attestation

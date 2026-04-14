@@ -65,4 +65,35 @@ library MockPQKey {
         require(size > 0, "MockPQKey: unsupported algorithm");
         key = new bytes(size - 1);
     }
+
+    /// @notice Returns a deterministic mock proof-of-possession of the correct minimum
+    ///         size for `algorithm`. For signature algorithms, uses expectedSignatureSize.
+    ///         For ML-KEM, returns a 32-byte mock shared secret.
+    ///         NOT cryptographically valid — for Foundry tests only.
+    function generateProof(bytes4 algorithm) internal pure returns (bytes memory proof) {
+        uint256 size = PQAlgorithms.expectedProofSize(algorithm);
+        require(size > 0, "MockPQKey: unsupported algorithm");
+
+        proof = new bytes(size);
+        uint256 chunks = (size + 31) / 32;
+        for (uint256 i = 0; i < chunks; i++) {
+            bytes32 chunk = keccak256(abi.encode(algorithm, i, "MOCK_PQ_PROOF_SEED"));
+            uint256 start = i * 32;
+            for (uint256 j = 0; j < 32 && start + j < size; j++) {
+                proof[start + j] = chunk[j];
+            }
+        }
+    }
+
+    /// @notice Returns a proof of insufficient size (expectedProofSize - 1) for revert tests.
+    function generateTooSmallProof(bytes4 algorithm) internal pure returns (bytes memory) {
+        uint256 size = PQAlgorithms.expectedProofSize(algorithm);
+        require(size > 0, "MockPQKey: unsupported algorithm");
+        return new bytes(size - 1);
+    }
+
+    /// @notice Returns a mock proof for a KEM algorithm (32-byte shared secret).
+    function generateKEMProof() internal pure returns (bytes memory) {
+        return abi.encodePacked(keccak256("MOCK_KEM_PROOF"));
+    }
 }

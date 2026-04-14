@@ -19,6 +19,12 @@ bytes4 constant ATT_AUDITED        = 0x41554454; // "AUDT"
 /// @dev Entropy source meets NIST SP 800-90B requirements.
 bytes4 constant ATT_ENTROPY_PROOF  = 0x454E5450; // "ENTP"
 
+// ─── Per-key attestation cap (max attestations stored per key) ──────────────────
+uint256 constant MAX_ATTESTATIONS_PER_KEY  = 20;
+
+// ─── Maximum attestation data payload size (bytes) ──────────────────────────────
+uint256 constant MAX_ATTESTATION_DATA_SIZE = 1024;
+
 /// @title  ERC-WWWW Key Attestation Extension
 /// @author Valisthea (@Valisthea)
 /// @notice Optional extension for third-party attestations about key generation quality.
@@ -31,7 +37,6 @@ bytes4 constant ATT_ENTROPY_PROOF  = 0x454E5450; // "ENTP"
 ///         Attestations are additive and non-exclusive. Multiple attesters
 ///         can attest to the same key with the same or different types.
 ///         Attestations are permanent — they cannot be removed after addition.
-
 interface IERCWWWW_Attestation is IERCWWWW {
 
     struct Attestation {
@@ -41,6 +46,14 @@ interface IERCWWWW_Attestation is IERCWWWW {
         uint256 timestamp;       // Block timestamp when attestation was recorded
         bytes data;              // Attestation-specific data (certificate hash, etc.)
     }
+
+    // ─── Custom Errors ────────────────────────────────────────────────────────
+
+    /// @dev Reverts when adding an attestation would exceed MAX_ATTESTATIONS_PER_KEY.
+    error AttestationLimitReached(bytes32 keyId, uint256 limit);
+
+    /// @dev Reverts when attestation data exceeds MAX_ATTESTATION_DATA_SIZE bytes.
+    error AttestationDataTooLarge(uint256 size, uint256 max);
 
     // ─── Events ──────────────────────────────────────────────────────────────
 
@@ -65,8 +78,22 @@ interface IERCWWWW_Attestation is IERCWWWW {
     ) external;
 
     /// @notice Returns all attestations recorded for a given key.
+    /// @dev    May be large for popular keys — prefer attestationsOfPaginated()
+    ///         for on-chain callers. Capped at MAX_ATTESTATIONS_PER_KEY entries.
     function attestationsOf(bytes32 keyId)
         external view returns (Attestation[] memory);
+
+    /// @notice Returns a paginated slice of attestations for a given key.
+    /// @param keyId   Key to query.
+    /// @param offset  Zero-based index of the first attestation to return.
+    /// @param limit   Maximum number of attestations to return.
+    /// @return attestations  Attestations for the requested page.
+    /// @return total         Total attestations recorded for this key.
+    function attestationsOfPaginated(
+        bytes32 keyId,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (Attestation[] memory attestations, uint256 total);
 
     /// @notice Returns whether a key has at least one attestation of the given type.
     function hasAttestation(bytes32 keyId, bytes4 attestationType)
