@@ -1,0 +1,14 @@
+# Foundry build artifacts
+out/
+cache/
+
+# Environment files
+.env
+.env.*
+
+# Broadcast receipts (keep script/ but not deployments by default)
+broadcast/
+
+# OS
+.DS_Store
+Thumbs.db
