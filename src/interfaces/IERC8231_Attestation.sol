@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity >=0.8.0;
 
-import "./IERCWWWW.sol";
+import "./IERC8231.sol";
 
 // ─── Attestation Type Constants (file-level) ──────────────────────────────────
 // These are file-level constants so they can be accessed after import without
-// the IERCWWWW_Attestation.CONSTANT_NAME syntax, which requires Solidity ≥0.8.17.
+// the IERC8231_Attestation.CONSTANT_NAME syntax, which requires Solidity ≥0.8.17.
 
 /// @dev Key was generated inside a Hardware Security Module.
 bytes4 constant ATT_HSM_GENERATED  = 0x48534D47; // "HSMG"
@@ -25,7 +25,7 @@ uint256 constant MAX_ATTESTATIONS_PER_KEY  = 20;
 // ─── Maximum attestation data payload size (bytes) ──────────────────────────────
 uint256 constant MAX_ATTESTATION_DATA_SIZE = 1024;
 
-/// @title  ERC-WWWW Key Attestation Extension
+/// @title  ERC-8231 Key Attestation Extension
 /// @author Valisthea (@Valisthea)
 /// @notice Optional extension for third-party attestations about key generation quality.
 ///
@@ -37,7 +37,7 @@ uint256 constant MAX_ATTESTATION_DATA_SIZE = 1024;
 ///         Attestations are additive and non-exclusive. Multiple attesters
 ///         can attest to the same key with the same or different types.
 ///         Attestations are permanent — they cannot be removed after addition.
-interface IERCWWWW_Attestation is IERCWWWW {
+interface IERC8231_Attestation is IERC8231 {
 
     struct Attestation {
         bytes32 keyId;           // Key being attested

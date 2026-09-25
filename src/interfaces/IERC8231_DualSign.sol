@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity >=0.8.0;
 
-import "./IERCWWWW.sol";
+import "./IERC8231.sol";
 
-/// @title  ERC-WWWW Dual-Signing Extension
+/// @title  ERC-8231 Dual-Signing Extension
 /// @author Valisthea (@Valisthea)
 /// @notice Optional extension for verifying dual classical + post-quantum signatures.
 ///
@@ -32,7 +32,7 @@ import "./IERCWWWW.sol";
 ///                   "EIP712Domain(string name,string version,"
 ///                   "uint256 chainId,address verifyingContract)"
 ///               ),
-///               keccak256("ERC-WWWW"),
+///               keccak256("ERC-8231"),
 ///               keccak256("1"),
 ///               block.chainid,
 ///               address(this)
@@ -45,7 +45,7 @@ import "./IERCWWWW.sol";
 ///         Implementations MUST NOT allow one scheme to sign the raw message
 ///         while the other signs the hash — both MUST operate on `digest`.
 
-interface IERCWWWW_DualSign is IERCWWWW {
+interface IERC8231_DualSign is IERC8231 {
 
     /// @notice Verify a dual signature (secp256k1 ECDSA + post-quantum).
     /// @dev    Returns true if and only if BOTH signatures are valid over

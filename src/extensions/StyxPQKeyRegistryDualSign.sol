@@ -2,13 +2,13 @@
 pragma solidity ^0.8.24;
 
 import {StyxPQKeyRegistry} from "../StyxPQKeyRegistry.sol";
-import {IERCWWWW_DualSign} from "../interfaces/IERCWWWW_DualSign.sol";
+import {IERC8231_DualSign} from "../interfaces/IERC8231_DualSign.sol";
 import {PQAlgorithms} from "../libraries/PQAlgorithms.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /// @title  StyxPQKeyRegistryDualSign
 /// @author Valisthea (@Valisthea)
-/// @notice Extension implementing the IERCWWWW_DualSign interface.
+/// @notice Extension implementing the IERC8231_DualSign interface.
 ///         Verifies dual classical (secp256k1 ECDSA) + PQ signatures over a
 ///         canonical EIP-712 digest.
 ///
@@ -19,7 +19,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 ///         non-empty PQ signature is provided and that the referenced key is in a
 ///         valid state. Callers SHOULD verify the PQ signature off-chain before
 ///         relying on the dual-sign result for high-value operations.
-contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
+contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERC8231_DualSign {
     using ECDSA for bytes32;
 
     // ─── Domain separator (fork-safe, recomputed on chain-id change) ─────────
@@ -43,7 +43,7 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
             keccak256(
                 "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
             ),
-            keccak256("ERC-WWWW"),
+            keccak256("ERC-8231"),
             keccak256("1"),
             block.chainid,
             address(this)
@@ -61,7 +61,7 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
 
     // ─── Dual-Sign Functions ──────────────────────────────────────────────────
 
-    /// @inheritdoc IERCWWWW_DualSign
+    /// @inheritdoc IERC8231_DualSign
     function verifyDualSignature(
         bytes32 keyId,
         bytes calldata message,
@@ -102,12 +102,12 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
         return true;
     }
 
-    /// @inheritdoc IERCWWWW_DualSign
+    /// @inheritdoc IERC8231_DualSign
     function domainSeparator() external view returns (bytes32) {
         return _domainSeparator();
     }
 
-    /// @inheritdoc IERCWWWW_DualSign
+    /// @inheritdoc IERC8231_DualSign
     function isDualSignReady(address account) external view returns (bool) {
         bytes32[] storage keys = _ownerKeys[account];
         for (uint256 i = 0; i < keys.length; i++) {
@@ -132,7 +132,7 @@ contract StyxPQKeyRegistryDualSign is StyxPQKeyRegistry, IERCWWWW_DualSign {
         override
         returns (bool)
     {
-        return interfaceId == type(IERCWWWW_DualSign).interfaceId
+        return interfaceId == type(IERC8231_DualSign).interfaceId
             || super.supportsInterface(interfaceId);
     }
 }

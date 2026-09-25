@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StyxPQKeyRegistry} from "../src/StyxPQKeyRegistry.sol";
-import {IERCWWWW} from "../src/interfaces/IERCWWWW.sol";
+import {IERC8231} from "../src/interfaces/IERC8231.sol";
 import {PQAlgorithms} from "../src/libraries/PQAlgorithms.sol";
 import {MockPQKey} from "./mocks/MockPQKey.sol";
 
@@ -27,7 +27,7 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE,
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE,
             pk, 0, proof
         );
 
@@ -42,7 +42,7 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_KEM_768, IERCWWWW.KeyPurpose.ENCAPSULATION,
+            alice, PQAlgorithms.ML_KEM_768, IERC8231.KeyPurpose.ENCAPSULATION,
             pk, 0, proof
         );
 
@@ -56,7 +56,7 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.SLH_DSA_256, IERCWWWW.KeyPurpose.SIGNATURE,
+            alice, PQAlgorithms.SLH_DSA_256, IERC8231.KeyPurpose.SIGNATURE,
             pk, 0, proof
         );
 
@@ -70,10 +70,10 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.InvalidProofOfPossession.selector, bytes32(0)
+            IERC8231.InvalidProofOfPossession.selector, bytes32(0)
         ));
         registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE,
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE,
             pk, 0, bytes("")
         );
     }
@@ -85,10 +85,10 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.InvalidProofOfPossession.selector, bytes32(0)
+            IERC8231.InvalidProofOfPossession.selector, bytes32(0)
         ));
         registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE,
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE,
             pk, 0, proof
         );
     }
@@ -99,10 +99,10 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.InvalidProofOfPossession.selector, bytes32(0)
+            IERC8231.InvalidProofOfPossession.selector, bytes32(0)
         ));
         registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_KEM_512, IERCWWWW.KeyPurpose.ENCAPSULATION,
+            alice, PQAlgorithms.ML_KEM_512, IERC8231.KeyPurpose.ENCAPSULATION,
             pk, 0, proof
         );
     }
@@ -113,7 +113,7 @@ contract StyxPQKeyRegistryProofTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
 
         // No proof stored — returns zero
@@ -122,7 +122,7 @@ contract StyxPQKeyRegistryProofTest is Test {
 
     function test_proofHash_revertKeyNotFound() public {
         bytes32 fakeId = keccak256("nonexistent");
-        vm.expectRevert(abi.encodeWithSelector(IERCWWWW.KeyNotFound.selector, fakeId));
+        vm.expectRevert(abi.encodeWithSelector(IERC8231.KeyNotFound.selector, fakeId));
         registry.proofHash(fakeId);
     }
 
@@ -133,7 +133,7 @@ contract StyxPQKeyRegistryProofTest is Test {
         uint256 newMax = 50;
 
         vm.expectEmit(false, false, false, true);
-        emit IERCWWWW.MaxKeysPerOwnerUpdated(oldMax, newMax);
+        emit IERC8231.MaxKeysPerOwnerUpdated(oldMax, newMax);
         registry.setMaxKeysPerOwner(newMax);
 
         assertEq(registry.maxKeysPerOwner(), newMax);
@@ -144,7 +144,7 @@ contract StyxPQKeyRegistryProofTest is Test {
         uint256 newLevel = 3;
 
         vm.expectEmit(false, false, false, true);
-        emit IERCWWWW.MinNistLevelUpdated(oldLevel, newLevel);
+        emit IERC8231.MinNistLevelUpdated(oldLevel, newLevel);
         registry.setMinNistLevel(newLevel);
 
         assertEq(registry.minNistLevel(), newLevel);
@@ -166,15 +166,15 @@ contract StyxPQKeyRegistryProofTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.startPrank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
-        assertEq(uint8(registry.keyInfo(keyId).state), uint8(IERCWWWW.KeyState.REGISTERED));
+        assertEq(uint8(registry.keyInfo(keyId).state), uint8(IERC8231.KeyState.REGISTERED));
 
         // Revoke without ever activating — should work
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.OWNER_REQUEST);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.OWNER_REQUEST);
         vm.stopPrank();
 
-        assertEq(uint8(registry.keyInfo(keyId).state), uint8(IERCWWWW.KeyState.REVOKED));
+        assertEq(uint8(registry.keyInfo(keyId).state), uint8(IERC8231.KeyState.REVOKED));
         assertFalse(registry.isKeyUsable(keyId));
     }
 
@@ -185,10 +185,10 @@ contract StyxPQKeyRegistryProofTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_87);
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_87, IERCWWWW.KeyPurpose.DUAL, pk, 0
+            alice, PQAlgorithms.ML_DSA_87, IERC8231.KeyPurpose.DUAL, pk, 0
         );
 
-        assertEq(uint8(registry.keyInfo(keyId).purpose), uint8(IERCWWWW.KeyPurpose.DUAL));
+        assertEq(uint8(registry.keyInfo(keyId).purpose), uint8(IERC8231.KeyPurpose.DUAL));
     }
 
     function test_dualPurpose_kemAlgo() public {
@@ -196,10 +196,10 @@ contract StyxPQKeyRegistryProofTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_KEM_1024);
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_KEM_1024, IERCWWWW.KeyPurpose.DUAL, pk, 0
+            alice, PQAlgorithms.ML_KEM_1024, IERC8231.KeyPurpose.DUAL, pk, 0
         );
 
-        assertEq(uint8(registry.keyInfo(keyId).purpose), uint8(IERCWWWW.KeyPurpose.DUAL));
+        assertEq(uint8(registry.keyInfo(keyId).purpose), uint8(IERC8231.KeyPurpose.DUAL));
     }
 
     // ─── Fuzz: register with any-length proof ≥ expected → always passes size check ──
@@ -213,7 +213,7 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_DSA_44, IERCWWWW.KeyPurpose.SIGNATURE,
+            alice, PQAlgorithms.ML_DSA_44, IERC8231.KeyPurpose.SIGNATURE,
             pk, 0, proof
         );
 
@@ -230,10 +230,10 @@ contract StyxPQKeyRegistryProofTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.InvalidProofOfPossession.selector, bytes32(0)
+            IERC8231.InvalidProofOfPossession.selector, bytes32(0)
         ));
         registry.registerPQKeyWithProof(
-            alice, PQAlgorithms.ML_DSA_44, IERCWWWW.KeyPurpose.SIGNATURE,
+            alice, PQAlgorithms.ML_DSA_44, IERC8231.KeyPurpose.SIGNATURE,
             pk, 0, proof
         );
     }

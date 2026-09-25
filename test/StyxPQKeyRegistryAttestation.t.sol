@@ -3,13 +3,13 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StyxPQKeyRegistryAttestation} from "../src/extensions/StyxPQKeyRegistryAttestation.sol";
-import {IERCWWWW} from "../src/interfaces/IERCWWWW.sol";
+import {IERC8231} from "../src/interfaces/IERC8231.sol";
 import {
-    IERCWWWW_Attestation,
+    IERC8231_Attestation,
     ATT_HSM_GENERATED,
     ATT_FIPS_VALIDATED,
     ATT_AUDITED
-} from "../src/interfaces/IERCWWWW_Attestation.sol";
+} from "../src/interfaces/IERC8231_Attestation.sol";
 import {PQAlgorithms} from "../src/libraries/PQAlgorithms.sol";
 import {MockPQKey} from "./mocks/MockPQKey.sol";
 
@@ -27,7 +27,7 @@ contract StyxPQKeyRegistryAttestationTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
     }
 
@@ -36,7 +36,7 @@ contract StyxPQKeyRegistryAttestationTest is Test {
 
         vm.prank(auditor);
         vm.expectEmit(true, true, true, false);
-        emit IERCWWWW_Attestation.KeyAttested(
+        emit IERC8231_Attestation.KeyAttested(
             keyId, auditor, ATT_HSM_GENERATED
         );
         registry.attestKey(keyId, ATT_HSM_GENERATED, attestData);
@@ -61,7 +61,7 @@ contract StyxPQKeyRegistryAttestationTest is Test {
         vm.prank(auditor);
         registry.attestKey(keyId, ATT_FIPS_VALIDATED, d2);
 
-        IERCWWWW_Attestation.Attestation[] memory atts = registry.attestationsOf(keyId);
+        IERC8231_Attestation.Attestation[] memory atts = registry.attestationsOf(keyId);
         assertEq(atts.length, 2);
         assertEq(atts[0].attestationType, ATT_HSM_GENERATED);
         assertEq(atts[0].attester, auditor);
@@ -71,13 +71,13 @@ contract StyxPQKeyRegistryAttestationTest is Test {
     function test_attestKey_revertKeyNotFound() public {
         bytes32 fakeId = keccak256("nonexistent");
         vm.prank(auditor);
-        vm.expectRevert(abi.encodeWithSelector(IERCWWWW.KeyNotFound.selector, fakeId));
+        vm.expectRevert(abi.encodeWithSelector(IERC8231.KeyNotFound.selector, fakeId));
         registry.attestKey(fakeId, ATT_AUDITED, "");
     }
 
     function test_supportsInterface_attestation() public view {
-        assertTrue(registry.supportsInterface(type(IERCWWWW_Attestation).interfaceId));
-        assertTrue(registry.supportsInterface(type(IERCWWWW).interfaceId));
+        assertTrue(registry.supportsInterface(type(IERC8231_Attestation).interfaceId));
+        assertTrue(registry.supportsInterface(type(IERC8231).interfaceId));
         assertTrue(registry.supportsInterface(0x01ffc9a7)); // ERC-165
     }
 }

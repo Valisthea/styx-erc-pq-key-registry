@@ -1,4 +1,8 @@
-# ERC-WWWW: Post-Quantum Key Registry
+# ERC-8231: Post-Quantum Key Registry
+
+**Canonical proposal:** [ethereum/ERCs#1684](https://github.com/ethereum/ERCs/pull/1684) · **Discussion:** [Ethereum Magicians](https://ethereum-magicians.org/t/erc-8231-post-quantum-key-registry/28235)
+
+The authoritative text is the one in the pull request; this repository is a working mirror.
 
 **Fourth ERC of the [STYX Protocol](https://github.com/Valisthea) suite by Valisthea.**
 
@@ -24,10 +28,10 @@ Account → registerPQKeyWithProof() → REGISTERED
 
 | File | Purpose |
 |------|---------|
-| `IERCWWWW.sol` | Core interface — key lifecycle, pagination, expiration |
-| `IERCWWWW_DualSign.sol` | Optional — classical + PQ dual-signature verification (EIP-712) |
-| `IERCWWWW_OnChainVerify.sol` | Optional — on-chain PQ signature verification (expensive) |
-| `IERCWWWW_Attestation.sol` | Optional — third-party key quality attestations (HSM, FIPS 140-3) |
+| `IERC8231.sol` | Core interface — key lifecycle, pagination, expiration |
+| `IERC8231_DualSign.sol` | Optional — classical + PQ dual-signature verification (EIP-712) |
+| `IERC8231_OnChainVerify.sol` | Optional — on-chain PQ signature verification (expensive) |
+| `IERC8231_Attestation.sol` | Optional — third-party key quality attestations (HSM, FIPS 140-3) |
 
 ---
 
@@ -39,7 +43,7 @@ Seven security fixes from the Kairos Lab OMEGA V4 audit:
 2. **Paginated key queries** — `keysOfPaginated()` + `keyCountOf()` + `maxKeysPerOwner()` prevent gas DoS
 3. **Key expiration** — `expiresAt` field + `validityPeriod` param; `isKeyUsable()` checks expiry
 4. **Structured revocation** — `RevocationReason` enum replaces unbounded string
-5. **On-chain verify as extension** — `verifyPQSignature()` moved to optional `IERCWWWW_OnChainVerify` (ML-DSA-65: ~1.5M gas)
+5. **On-chain verify as extension** — `verifyPQSignature()` moved to optional `IERC8231_OnChainVerify` (ML-DSA-65: ~1.5M gas)
 6. **Canonical dual-sign format** — Both signatures sign the same EIP-712 digest
 7. **REGISTERED→ACTIVE documentation** — Two-step lifecycle rationale for key ceremony pre-staging
 
@@ -68,7 +72,7 @@ Seven security fixes from the Kairos Lab OMEGA V4 audit:
 | ERC-1680 | Encrypted Token Interface | Draft — PR open |
 | ERC-1681 | Cryptographic Amnesia Interface | Draft — PR open |
 | ERC-1682 | FHE Computation Verification Interface | Draft — PR open |
-| ERC-WWWW | Post-Quantum Key Registry | This repo |
+| ERC-8231 | Post-Quantum Key Registry | This repo |
 
 ---
 

@@ -3,16 +3,16 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StyxPQKeyRegistryAttestation} from "../src/extensions/StyxPQKeyRegistryAttestation.sol";
-import {IERCWWWW} from "../src/interfaces/IERCWWWW.sol";
+import {IERC8231} from "../src/interfaces/IERC8231.sol";
 import {
-    IERCWWWW_Attestation,
+    IERC8231_Attestation,
     ATT_HSM_GENERATED,
     ATT_FIPS_VALIDATED,
     ATT_AUDITED,
     ATT_ENTROPY_PROOF,
     MAX_ATTESTATIONS_PER_KEY,
     MAX_ATTESTATION_DATA_SIZE
-} from "../src/interfaces/IERCWWWW_Attestation.sol";
+} from "../src/interfaces/IERC8231_Attestation.sol";
 import {PQAlgorithms} from "../src/libraries/PQAlgorithms.sol";
 import {MockPQKey} from "./mocks/MockPQKey.sol";
 
@@ -30,7 +30,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
     }
 
@@ -48,7 +48,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         // 21st attestation must revert
         vm.prank(auditor);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW_Attestation.AttestationLimitReached.selector,
+            IERC8231_Attestation.AttestationLimitReached.selector,
             keyId,
             MAX_ATTESTATIONS_PER_KEY
         ));
@@ -68,7 +68,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         bytes memory data = new bytes(MAX_ATTESTATION_DATA_SIZE + 1); // 1025 bytes
         vm.prank(auditor);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW_Attestation.AttestationDataTooLarge.selector,
+            IERC8231_Attestation.AttestationDataTooLarge.selector,
             MAX_ATTESTATION_DATA_SIZE + 1,
             MAX_ATTESTATION_DATA_SIZE
         ));
@@ -86,7 +86,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         registry.attestKey(keyId, ATT_AUDITED, "data3");
 
         // First page: offset=0, limit=2 → 2 entries
-        (IERCWWWW_Attestation.Attestation[] memory page, uint256 total) =
+        (IERC8231_Attestation.Attestation[] memory page, uint256 total) =
             registry.attestationsOfPaginated(keyId, 0, 2);
         assertEq(total, 3);
         assertEq(page.length, 2);
@@ -94,7 +94,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         assertEq(page[1].attestationType, ATT_FIPS_VALIDATED);
 
         // Second page: offset=2, limit=10 → 1 entry (clamped)
-        (IERCWWWW_Attestation.Attestation[] memory tail, uint256 total2) =
+        (IERC8231_Attestation.Attestation[] memory tail, uint256 total2) =
             registry.attestationsOfPaginated(keyId, 2, 10);
         assertEq(total2, 3);
         assertEq(tail.length, 1);
@@ -105,7 +105,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         vm.prank(auditor);
         registry.attestKey(keyId, ATT_HSM_GENERATED, "");
 
-        (IERCWWWW_Attestation.Attestation[] memory page, uint256 total) =
+        (IERC8231_Attestation.Attestation[] memory page, uint256 total) =
             registry.attestationsOfPaginated(keyId, 10, 5);
         assertEq(total, 1);
         assertEq(page.length, 0);
@@ -115,7 +115,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         vm.prank(auditor);
         registry.attestKey(keyId, ATT_HSM_GENERATED, "");
 
-        (IERCWWWW_Attestation.Attestation[] memory page, uint256 total) =
+        (IERC8231_Attestation.Attestation[] memory page, uint256 total) =
             registry.attestationsOfPaginated(keyId, 0, 0);
         assertEq(total, 1);
         assertEq(page.length, 0);
@@ -132,7 +132,7 @@ contract StyxPQKeyRegistryAttestationCapsTest is Test {
         } else {
             vm.prank(auditor);
             vm.expectRevert(abi.encodeWithSelector(
-                IERCWWWW_Attestation.AttestationDataTooLarge.selector,
+                IERC8231_Attestation.AttestationDataTooLarge.selector,
                 uint256(size),
                 MAX_ATTESTATION_DATA_SIZE
             ));

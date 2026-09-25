@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StyxPQKeyRegistry} from "../src/StyxPQKeyRegistry.sol";
-import {IERCWWWW} from "../src/interfaces/IERCWWWW.sol";
+import {IERC8231} from "../src/interfaces/IERC8231.sol";
 import {PQAlgorithms} from "../src/libraries/PQAlgorithms.sol";
 import {MockPQKey} from "./mocks/MockPQKey.sol";
 
@@ -24,12 +24,12 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.UnauthorizedKeyOwner.selector, bob, alice
+            IERC8231.UnauthorizedKeyOwner.selector, bob, alice
         ));
         registry.activateKey(keyId);
     }
@@ -38,16 +38,16 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
         vm.prank(alice);
         registry.activateKey(keyId);
 
         vm.prank(bob);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.UnauthorizedKeyOwner.selector, bob, alice
+            IERC8231.UnauthorizedKeyOwner.selector, bob, alice
         ));
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.GOVERNANCE_ACTION);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.GOVERNANCE_ACTION);
     }
 
     function test_cannotRotateAcrossOwners() public {
@@ -56,20 +56,20 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
 
         vm.prank(alice);
         bytes32 aliceKeyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkA, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkA, 0
         );
         vm.prank(alice);
         registry.activateKey(aliceKeyId);
 
         vm.prank(bob);
         bytes32 bobKeyId = registry.registerPQKey(
-            bob, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkB, 0
+            bob, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkB, 0
         );
 
         // Alice tries to rotate her key to Bob's — should fail (Bob's key owned by Bob)
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.UnauthorizedKeyOwner.selector, alice, bob
+            IERC8231.UnauthorizedKeyOwner.selector, alice, bob
         ));
         registry.rotateKey(aliceKeyId, bobKeyId);
     }
@@ -80,12 +80,12 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
 
         vm.startPrank(alice);
         bytes32 key65 = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk65, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk65, 0
         );
         registry.activateKey(key65);
 
         bytes32 key87 = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_87, IERCWWWW.KeyPurpose.SIGNATURE, pk87, 0
+            alice, PQAlgorithms.ML_DSA_87, IERC8231.KeyPurpose.SIGNATURE, pk87, 0
         );
 
         // Different algorithms — should revert
@@ -100,21 +100,21 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.startPrank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
         registry.activateKey(keyId);
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.KEY_COMPROMISED);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.KEY_COMPROMISED);
         vm.stopPrank();
 
         assertFalse(registry.isKeyUsable(keyId));
-        assertEq(uint8(registry.keyInfo(keyId).state), uint8(IERCWWWW.KeyState.REVOKED));
+        assertEq(uint8(registry.keyInfo(keyId).state), uint8(IERC8231.KeyState.REVOKED));
     }
 
     function test_expiredKeyNotUsable() public {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.startPrank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 100
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 100
         );
         registry.activateKey(keyId);
         vm.stopPrank();
@@ -130,19 +130,19 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
 
         vm.startPrank(alice);
         bytes32 keyId1 = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk1, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk1, 0
         );
         registry.activateKey(keyId1);
 
         bytes32 keyId2 = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk2, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk2, 0
         );
         registry.rotateKey(keyId1, keyId2);
         vm.stopPrank();
 
         // Rotated key: not usable for new ops but still queryable
         assertFalse(registry.isKeyUsable(keyId1));
-        assertEq(uint8(registry.keyInfo(keyId1).state), uint8(IERCWWWW.KeyState.ROTATED));
+        assertEq(uint8(registry.keyInfo(keyId1).state), uint8(IERC8231.KeyState.ROTATED));
 
         // Public key still accessible for historical signature verification
         bytes memory stored = registry.publicKeyOf(keyId1);
@@ -165,7 +165,7 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
 
         vm.prank(alice);
         bytes32 registeredId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
 
         assertEq(registeredId, expectedId);
@@ -173,10 +173,10 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
         // Second call with same inputs → same keyId → reverts with KeyAlreadyRegistered
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.KeyAlreadyRegistered.selector, expectedId
+            IERC8231.KeyAlreadyRegistered.selector, expectedId
         ));
         registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
     }
 
@@ -210,13 +210,13 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.startPrank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
         registry.activateKey(keyId);
 
         // Now key is ACTIVE, not REGISTERED — activateKey should revert
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.KeyNotActive.selector, keyId, IERCWWWW.KeyState.ACTIVE
+            IERC8231.KeyNotActive.selector, keyId, IERC8231.KeyState.ACTIVE
         ));
         registry.activateKey(keyId);
         vm.stopPrank();
@@ -226,15 +226,15 @@ contract StyxPQKeyRegistryEdgeCasesTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.startPrank(alice);
         bytes32 keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
         registry.activateKey(keyId);
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.OWNER_REQUEST);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.OWNER_REQUEST);
 
         vm.expectRevert(abi.encodeWithSelector(
-            IERCWWWW.KeyAlreadyRevoked.selector, keyId
+            IERC8231.KeyAlreadyRevoked.selector, keyId
         ));
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.OWNER_REQUEST);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.OWNER_REQUEST);
         vm.stopPrank();
     }
 }

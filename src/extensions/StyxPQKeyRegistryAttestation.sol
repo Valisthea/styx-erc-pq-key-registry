@@ -3,16 +3,16 @@ pragma solidity ^0.8.24;
 
 import {StyxPQKeyRegistry} from "../StyxPQKeyRegistry.sol";
 import {
-    IERCWWWW_Attestation,
+    IERC8231_Attestation,
     MAX_ATTESTATIONS_PER_KEY,
     MAX_ATTESTATION_DATA_SIZE
-} from "../interfaces/IERCWWWW_Attestation.sol";
+} from "../interfaces/IERC8231_Attestation.sol";
 
 /// @title  StyxPQKeyRegistryAttestation
 /// @author Valisthea (@Valisthea)
-/// @notice Extension of StyxPQKeyRegistry implementing the optional IERCWWWW_Attestation
+/// @notice Extension of StyxPQKeyRegistry implementing the optional IERC8231_Attestation
 ///         interface for third-party key quality attestations (HSM, FIPS 140-3, audit proofs).
-contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation {
+contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERC8231_Attestation {
 
     // ─── Storage ──────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
 
     // ─── Attestation Functions ────────────────────────────────────────────────
 
-    /// @inheritdoc IERCWWWW_Attestation
+    /// @inheritdoc IERC8231_Attestation
     function attestKey(
         bytes32 keyId,
         bytes4 attestationType,
@@ -56,7 +56,7 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
         emit KeyAttested(keyId, msg.sender, attestationType);
     }
 
-    /// @inheritdoc IERCWWWW_Attestation
+    /// @inheritdoc IERC8231_Attestation
     function attestationsOf(bytes32 keyId)
         external
         view
@@ -65,7 +65,7 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
         return _attestations[keyId];
     }
 
-    /// @inheritdoc IERCWWWW_Attestation
+    /// @inheritdoc IERC8231_Attestation
     function attestationsOfPaginated(
         bytes32 keyId,
         uint256 offset,
@@ -86,7 +86,7 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
         }
     }
 
-    /// @inheritdoc IERCWWWW_Attestation
+    /// @inheritdoc IERC8231_Attestation
     function hasAttestation(bytes32 keyId, bytes4 attestationType)
         external
         view
@@ -103,7 +103,7 @@ contract StyxPQKeyRegistryAttestation is StyxPQKeyRegistry, IERCWWWW_Attestation
         override
         returns (bool)
     {
-        return interfaceId == type(IERCWWWW_Attestation).interfaceId
+        return interfaceId == type(IERC8231_Attestation).interfaceId
             || super.supportsInterface(interfaceId);
     }
 }

@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StyxPQKeyRegistryDualSign} from "../src/extensions/StyxPQKeyRegistryDualSign.sol";
-import {IERCWWWW} from "../src/interfaces/IERCWWWW.sol";
-import {IERCWWWW_DualSign} from "../src/interfaces/IERCWWWW_DualSign.sol";
+import {IERC8231} from "../src/interfaces/IERC8231.sol";
+import {IERC8231_DualSign} from "../src/interfaces/IERC8231_DualSign.sol";
 import {PQAlgorithms} from "../src/libraries/PQAlgorithms.sol";
 import {MockPQKey} from "./mocks/MockPQKey.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -26,7 +26,7 @@ contract StyxPQKeyRegistryDualSignTest is Test {
         bytes memory pk = MockPQKey.generate(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         keyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk, 0
         );
         vm.prank(alice);
         registry.activateKey(keyId);
@@ -56,7 +56,7 @@ contract StyxPQKeyRegistryDualSignTest is Test {
 
     function test_isDualSignReady_falseAfterRevocation() public {
         vm.prank(alice);
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.OWNER_REQUEST);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.OWNER_REQUEST);
 
         assertFalse(registry.isDualSignReady(alice));
     }
@@ -66,7 +66,7 @@ contract StyxPQKeyRegistryDualSignTest is Test {
         bytes memory pk2 = MockPQKey.generateAlt(PQAlgorithms.ML_DSA_65);
         vm.prank(alice);
         bytes32 keyId2 = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pk2, 100
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pk2, 100
         );
         vm.prank(alice);
         registry.activateKey(keyId2);
@@ -109,7 +109,7 @@ contract StyxPQKeyRegistryDualSignTest is Test {
 
         // Revoke key
         vm.prank(alice);
-        registry.revokeKey(keyId, IERCWWWW.RevocationReason.KEY_COMPROMISED);
+        registry.revokeKey(keyId, IERC8231.RevocationReason.KEY_COMPROMISED);
 
         assertFalse(registry.verifyDualSignature(keyId, message, classicSig, pqSig, alice));
     }
@@ -164,7 +164,7 @@ contract StyxPQKeyRegistryDualSignTest is Test {
         bytes memory kemPk = MockPQKey.generate(PQAlgorithms.ML_KEM_768);
         vm.prank(alice);
         bytes32 kemKeyId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_KEM_768, IERCWWWW.KeyPurpose.ENCAPSULATION, kemPk, 0
+            alice, PQAlgorithms.ML_KEM_768, IERC8231.KeyPurpose.ENCAPSULATION, kemPk, 0
         );
         vm.prank(alice);
         registry.activateKey(kemKeyId);
@@ -187,8 +187,8 @@ contract StyxPQKeyRegistryDualSignTest is Test {
     // ─── ERC-165 ──────────────────────────────────────────────────────────────
 
     function test_supportsInterface_dualSign() public view {
-        assertTrue(registry.supportsInterface(type(IERCWWWW_DualSign).interfaceId));
-        assertTrue(registry.supportsInterface(type(IERCWWWW).interfaceId));
+        assertTrue(registry.supportsInterface(type(IERC8231_DualSign).interfaceId));
+        assertTrue(registry.supportsInterface(type(IERC8231).interfaceId));
         assertTrue(registry.supportsInterface(0x01ffc9a7)); // ERC-165
     }
 }

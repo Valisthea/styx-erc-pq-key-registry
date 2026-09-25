@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {StyxPQKeyRegistry} from "../src/StyxPQKeyRegistry.sol";
-import {IERCWWWW} from "../src/interfaces/IERCWWWW.sol";
+import {IERC8231} from "../src/interfaces/IERC8231.sol";
 import {PQAlgorithms} from "../src/libraries/PQAlgorithms.sol";
 import {MockPQKey} from "./mocks/MockPQKey.sol";
 
@@ -27,30 +27,30 @@ contract StyxPQKeyRegistryLifecycleTest is Test {
 
         // 1. Register key A
         bytes32 keyA = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkA, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkA, 0
         );
-        assertEq(uint8(registry.keyInfo(keyA).state), uint8(IERCWWWW.KeyState.REGISTERED));
+        assertEq(uint8(registry.keyInfo(keyA).state), uint8(IERC8231.KeyState.REGISTERED));
 
         // 2. Activate key A
         registry.activateKey(keyA);
-        assertEq(uint8(registry.keyInfo(keyA).state), uint8(IERCWWWW.KeyState.ACTIVE));
+        assertEq(uint8(registry.keyInfo(keyA).state), uint8(IERC8231.KeyState.ACTIVE));
         assertTrue(registry.isKeyUsable(keyA));
 
         // 3. Register & rotate to key B
         bytes32 keyB = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkB, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkB, 0
         );
         registry.rotateKey(keyA, keyB);
-        assertEq(uint8(registry.keyInfo(keyA).state), uint8(IERCWWWW.KeyState.ROTATED));
-        assertEq(uint8(registry.keyInfo(keyB).state), uint8(IERCWWWW.KeyState.ACTIVE));
+        assertEq(uint8(registry.keyInfo(keyA).state), uint8(IERC8231.KeyState.ROTATED));
+        assertEq(uint8(registry.keyInfo(keyB).state), uint8(IERC8231.KeyState.ACTIVE));
         assertFalse(registry.isKeyUsable(keyA));
         assertTrue(registry.isKeyUsable(keyB));
 
         // 4. Revoke key B
-        registry.revokeKey(keyB, IERCWWWW.RevocationReason.KEY_COMPROMISED);
-        assertEq(uint8(registry.keyInfo(keyB).state), uint8(IERCWWWW.KeyState.REVOKED));
+        registry.revokeKey(keyB, IERC8231.RevocationReason.KEY_COMPROMISED);
+        assertEq(uint8(registry.keyInfo(keyB).state), uint8(IERC8231.KeyState.REVOKED));
         assertFalse(registry.isKeyUsable(keyB));
-        assertEq(registry.activeKeyFor(alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE), bytes32(0));
+        assertEq(registry.activeKeyFor(alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE), bytes32(0));
 
         vm.stopPrank();
     }
@@ -65,17 +65,17 @@ contract StyxPQKeyRegistryLifecycleTest is Test {
         vm.startPrank(alice);
 
         bytes32 keyA = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkA, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkA, 0
         );
         registry.activateKey(keyA);
 
         bytes32 keyB = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkB, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkB, 0
         );
         registry.rotateKey(keyA, keyB);
 
         bytes32 keyC = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_65, IERCWWWW.KeyPurpose.SIGNATURE, pkC, 0
+            alice, PQAlgorithms.ML_DSA_65, IERC8231.KeyPurpose.SIGNATURE, pkC, 0
         );
         registry.rotateKey(keyB, keyC);
 
@@ -112,13 +112,13 @@ contract StyxPQKeyRegistryLifecycleTest is Test {
         vm.startPrank(alice);
 
         bytes32 kemId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_KEM_1024, IERCWWWW.KeyPurpose.ENCAPSULATION, kyber, 0
+            alice, PQAlgorithms.ML_KEM_1024, IERC8231.KeyPurpose.ENCAPSULATION, kyber, 0
         );
         bytes32 dsaId = registry.registerPQKey(
-            alice, PQAlgorithms.ML_DSA_87, IERCWWWW.KeyPurpose.SIGNATURE, dilith, 0
+            alice, PQAlgorithms.ML_DSA_87, IERC8231.KeyPurpose.SIGNATURE, dilith, 0
         );
         bytes32 slhId = registry.registerPQKey(
-            alice, PQAlgorithms.SLH_DSA_256, IERCWWWW.KeyPurpose.SIGNATURE, sphincs, 0
+            alice, PQAlgorithms.SLH_DSA_256, IERC8231.KeyPurpose.SIGNATURE, sphincs, 0
         );
 
         registry.activateKey(kemId);
@@ -133,15 +133,15 @@ contract StyxPQKeyRegistryLifecycleTest is Test {
 
         // Active lookups are independent per algorithm+purpose
         assertEq(
-            registry.activeKeyFor(alice, PQAlgorithms.ML_KEM_1024, IERCWWWW.KeyPurpose.ENCAPSULATION),
+            registry.activeKeyFor(alice, PQAlgorithms.ML_KEM_1024, IERC8231.KeyPurpose.ENCAPSULATION),
             kemId
         );
         assertEq(
-            registry.activeKeyFor(alice, PQAlgorithms.ML_DSA_87, IERCWWWW.KeyPurpose.SIGNATURE),
+            registry.activeKeyFor(alice, PQAlgorithms.ML_DSA_87, IERC8231.KeyPurpose.SIGNATURE),
             dsaId
         );
         assertEq(
-            registry.activeKeyFor(alice, PQAlgorithms.SLH_DSA_256, IERCWWWW.KeyPurpose.SIGNATURE),
+            registry.activeKeyFor(alice, PQAlgorithms.SLH_DSA_256, IERC8231.KeyPurpose.SIGNATURE),
             slhId
         );
 

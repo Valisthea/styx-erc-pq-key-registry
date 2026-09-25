@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity >=0.8.0;
 
-/// @title  ERC-WWWW Post-Quantum Key Registry
+/// @title  ERC-8231 Post-Quantum Key Registry
 /// @author Valisthea (@Valisthea)
 /// @notice Standard interface for on-chain registration, rotation,
 ///         and migration of post-quantum cryptographic keys.
@@ -22,7 +22,7 @@ pragma solidity >=0.8.0;
 ///   ALG_SLH_DSA_192 = 0x534C4833  "SLH3" — NIST Level 3
 ///   ALG_SLH_DSA_256 = 0x534C4835  "SLH5" — NIST Level 5
 
-interface IERCWWWW {
+interface IERC8231 {
 
     // ─── Types ───────────────────────────────────────────────────────────────
 

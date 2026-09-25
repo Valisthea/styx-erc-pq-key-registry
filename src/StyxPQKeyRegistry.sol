@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity ^0.8.24;
 
-import {IERCWWWW} from "./interfaces/IERCWWWW.sol";
+import {IERC8231} from "./interfaces/IERC8231.sol";
 import {PQAlgorithms} from "./libraries/PQAlgorithms.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
@@ -16,8 +16,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// @dev    Key lifecycle: REGISTERED → ACTIVE → ROTATED → REVOKED
 ///         Key IDs are computed deterministically on-chain to prevent front-running.
 ///         Public keys are stored in full to enable on-chain verification via the
-///         optional IERCWWWW_OnChainVerify extension.
-contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
+///         optional IERC8231_OnChainVerify extension.
+contract StyxPQKeyRegistry is IERC8231, ERC165, AccessControl, ReentrancyGuard {
 
     // ─── Roles ────────────────────────────────────────────────────────────────
 
@@ -65,7 +65,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
 
     // ─── Key Registration ─────────────────────────────────────────────────────
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function registerPQKey(
         address owner,
         bytes4 algorithm,
@@ -76,7 +76,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         return _registerKey(owner, algorithm, purpose, publicKey, validityPeriod);
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     /// @dev Proof of possession validation is structural at this layer:
     ///      the proof must be non-empty and meet the minimum size for the
     ///      algorithm (self-signature size for ML-DSA/SLH-DSA; 32-byte shared
@@ -188,7 +188,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
 
     // ─── Key Lifecycle ────────────────────────────────────────────────────────
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function activateKey(bytes32 keyId) external nonReentrant {
         PQKeyInfo storage key = _keys[keyId];
 
@@ -215,7 +215,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         emit PQKeyActivated(keyId, key.owner);
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function rotateKey(bytes32 oldKeyId, bytes32 newKeyId) external nonReentrant {
         PQKeyInfo storage oldKey = _keys[oldKeyId];
         PQKeyInfo storage newKey = _keys[newKeyId];
@@ -249,7 +249,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         emit PQKeyActivated(newKeyId, newKey.owner);
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function revokeKey(bytes32 keyId, RevocationReason reason) external nonReentrant {
         PQKeyInfo storage key = _keys[keyId];
 
@@ -270,19 +270,19 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
 
     // ─── Key Queries ──────────────────────────────────────────────────────────
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function keyInfo(bytes32 keyId) external view returns (PQKeyInfo memory) {
         if (_keys[keyId].registeredAt == 0) revert KeyNotFound(keyId);
         return _keys[keyId];
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function publicKeyOf(bytes32 keyId) external view returns (bytes memory) {
         if (_keys[keyId].registeredAt == 0) revert KeyNotFound(keyId);
         return _publicKeys[keyId];
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function activeKeyFor(
         address owner,
         bytes4 algorithm,
@@ -291,7 +291,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         return _activeKeys[owner][algorithm][uint8(purpose)];
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function keysOfPaginated(
         address owner,
         uint256 offset,
@@ -312,12 +312,12 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         }
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function keyCountOf(address owner) external view returns (uint256) {
         return _ownerKeys[owner].length;
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     /// @dev Walks backward via _rotationSource to find the chain root, then
     ///      forward via _rotationTarget to build the ordered chain.
     ///      Returns [root, ..., latest] regardless of which key in the chain
@@ -352,7 +352,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         return chain;
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function isKeyUsable(bytes32 keyId) external view returns (bool) {
         PQKeyInfo storage key = _keys[keyId];
         if (key.registeredAt == 0) return false;
@@ -361,7 +361,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         return true;
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function proofHash(bytes32 keyId) external view returns (bytes32) {
         if (_keys[keyId].registeredAt == 0) revert KeyNotFound(keyId);
         return _proofHashes[keyId];
@@ -369,23 +369,23 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
 
     // ─── Configuration ────────────────────────────────────────────────────────
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function minNistLevel() external view returns (uint256) { return _minNistLevel; }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function maxKeysPerOwner() external view returns (uint256) { return _maxKeysPerOwner; }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function supportedAlgorithms() external pure returns (bytes4[] memory) {
         return PQAlgorithms.allAlgorithms();
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function isAlgorithmSupported(bytes4 algorithm) external pure returns (bool) {
         return PQAlgorithms.isSupported(algorithm);
     }
 
-    /// @inheritdoc IERCWWWW
+    /// @inheritdoc IERC8231
     function expectedKeySize(bytes4 algorithm) external pure returns (uint256) {
         return PQAlgorithms.expectedKeySize(algorithm);
     }
@@ -413,7 +413,7 @@ contract StyxPQKeyRegistry is IERCWWWW, ERC165, AccessControl, ReentrancyGuard {
         override(ERC165, AccessControl)
         returns (bool)
     {
-        return interfaceId == type(IERCWWWW).interfaceId
+        return interfaceId == type(IERC8231).interfaceId
             || super.supportsInterface(interfaceId);
     }
 }

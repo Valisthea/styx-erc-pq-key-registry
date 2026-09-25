@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity >=0.8.0;
 
-import "./IERCWWWW.sol";
+import "./IERC8231.sol";
 
-/// @title  ERC-WWWW On-Chain Verification Extension
+/// @title  ERC-8231 On-Chain Verification Extension
 /// @author Valisthea (@Valisthea)
 /// @notice Optional extension for on-chain post-quantum signature verification.
 ///
@@ -14,7 +14,7 @@ import "./IERCWWWW.sol";
 ///           ML-DSA-65 (Dilithium-3): ~1,500,000 gas
 ///           SLH-DSA-256f:            ~10,000,000+ gas (thousands of SHAKE calls)
 ///
-///         This is intentionally NOT part of the core IERCWWWW interface.
+///         This is intentionally NOT part of the core IERC8231 interface.
 ///         The recommended flow for the vast majority of protocols is:
 ///
 ///           OFF-CHAIN:
@@ -34,7 +34,7 @@ import "./IERCWWWW.sol";
 ///           Consider using SHA3/SHAKE precompiles (EIP-5988, when available)
 ///           to reduce the hash computation cost significantly.
 
-interface IERCWWWW_OnChainVerify is IERCWWWW {
+interface IERC8231_OnChainVerify is IERC8231 {
 
     /// @notice Verify a post-quantum signature on-chain.
     /// @dev    The key MUST be in ACTIVE or ROTATED state.
